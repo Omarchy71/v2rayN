@@ -102,7 +102,15 @@ public static class FileUtils
                     {
                         continue;
                     }
-                    entry.ExtractToFile(Path.Combine(toPath, entry.Name), true);
+                    var destPath = Path.Combine(toPath, entry.Name);
+                    var resolvedDest = Path.GetFullPath(destPath);
+                    var resolvedBase = Path.GetFullPath(toPath);
+                    if (!resolvedDest.StartsWith(resolvedBase, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Logging.SaveLog(_tag, $"Zip Slip blocked: {entry.Name} attempts to write outside target directory");
+                        continue;
+                    }
+                    entry.ExtractToFile(resolvedDest, true);
                 }
                 catch (IOException ex)
                 {

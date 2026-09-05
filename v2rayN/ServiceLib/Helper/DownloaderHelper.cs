@@ -305,7 +305,6 @@ public class DownloaderHelper
         if (certificateChainPolicy != null)
         {
             handler.SslOptions.CertificateChainPolicy = certificateChainPolicy;
-            handler.SslOptions.RemoteCertificateValidationCallback = null;
         }
 
         // Configure keep-alive

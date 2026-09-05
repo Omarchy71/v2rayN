@@ -5,11 +5,13 @@ namespace ServiceLib.Services.Statistics;
 public class StatisticsSingboxService
 {
     private readonly Config _config;
-    private bool _exitFlag;
-    private ClientWebSocket? webSocket;
+    private volatile bool _exitFlag;
+    private volatile ClientWebSocket? webSocket;
+    private readonly object _wsLock = new();
     private readonly Func<ServerSpeedItem, Task>? _updateFunc;
     private string Url => $"ws://{Global.Loopback}:{AppManager.Instance.StatePort2}/traffic";
     private static readonly string _tag = "StatisticsSingboxService";
+    private const int BufferSize = 8192;
 
     public StatisticsSingboxService(Config config, Func<ServerSpeedItem, Task> updateFunc)
     {
@@ -48,10 +50,13 @@ public class StatisticsSingboxService
         try
         {
             _exitFlag = true;
-            if (webSocket != null)
+            lock (_wsLock)
             {
-                webSocket.Abort();
-                webSocket = null;
+                if (webSocket != null)
+                {
+                    webSocket.Abort();
+                    webSocket = null;
+                }
             }
         }
         catch (Exception ex)
@@ -88,7 +93,7 @@ public class StatisticsSingboxService
                         continue;
                     }
 
-                    var buffer = new byte[1024];
+                    var buffer = new byte[BufferSize];
                     var res = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                     while (!res.CloseStatus.HasValue)
                     {
@@ -107,8 +112,9 @@ public class StatisticsSingboxService
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logging.SaveLog(_tag, ex);
             }
         }
     }

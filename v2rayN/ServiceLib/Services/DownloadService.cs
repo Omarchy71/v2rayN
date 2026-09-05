@@ -153,7 +153,6 @@ public class DownloadService
         if (certificateChainPolicy != null)
         {
             webRequestHandler.SslOptions.CertificateChainPolicy = certificateChainPolicy;
-            webRequestHandler.SslOptions.RemoteCertificateValidationCallback = null;
         }
         using var client = new HttpClient(webRequestHandler);
 
@@ -242,7 +241,6 @@ public class DownloadService
             if (certificateChainPolicy != null)
             {
                 handler.SslOptions.CertificateChainPolicy = certificateChainPolicy;
-                handler.SslOptions.RemoteCertificateValidationCallback = null;
             }
 
             using var client = new HttpClient(handler)

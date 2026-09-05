@@ -2254,15 +2254,21 @@ public static class ConfigHandler
         var customProfile = await SQLiteHelper.Instance.TableAsync<ProfileItem>().Where(t => t.Subid == subid && (t.ConfigType == EConfigType.Custom || t.ConfigType == EConfigType.Outbound)).ToListAsync();
         if (isSub)
         {
-            await SQLiteHelper.Instance.ExecuteAsync($"delete from ProfileItem where isSub = 1 and subid = '{subid}'");
+            await SQLiteHelper.Instance.ExecuteAsync("delete from ProfileItem where isSub = 1 and subid = @subid", subid);
         }
         else
         {
-            await SQLiteHelper.Instance.ExecuteAsync($"delete from ProfileItem where subid = '{subid}'");
+            await SQLiteHelper.Instance.ExecuteAsync("delete from ProfileItem where subid = @subid", subid);
         }
         foreach (var item in customProfile)
         {
-            File.Delete(Utils.GetConfigPath(item.Address));
+            var configPath = Utils.GetConfigPath(item.Address);
+            var resolvedPath = Path.GetFullPath(configPath);
+            var configDir = Path.GetFullPath(Utils.GetConfigPath());
+            if (resolvedPath.StartsWith(configDir, StringComparison.OrdinalIgnoreCase) && File.Exists(resolvedPath))
+            {
+                File.Delete(resolvedPath);
+            }
         }
 
         return 0;

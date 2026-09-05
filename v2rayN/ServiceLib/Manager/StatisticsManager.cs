@@ -7,7 +7,8 @@ public class StatisticsManager
 
     private Config _config;
     private ServerStatItem? _serverStatItem;
-    private List<ServerStatItem> _lstServerStat;
+    private readonly List<ServerStatItem> _lstServerStat = [];
+    private readonly object _statLock = new();
     private Func<ServerSpeedItem, Task>? _updateFunc;
 
     private StatisticsXrayService? _statisticsXray;
@@ -43,9 +44,12 @@ public class StatisticsManager
 
     public async Task ClearAllServerStatistics()
     {
-        await SQLiteHelper.Instance.ExecuteAsync($"delete from ServerStatItem ");
-        _serverStatItem = null;
-        _lstServerStat = [];
+        await SQLiteHelper.Instance.ExecuteAsync("delete from ServerStatItem");
+        lock (_statLock)
+        {
+            _serverStatItem = null;
+            _lstServerStat.Clear();
+        }
     }
 
     public async Task SaveTo()
@@ -75,7 +79,11 @@ public class StatisticsManager
             return;
         }
 
-        var stat = _lstServerStat.FirstOrDefault(t => t.IndexId == indexId);
+        ServerStatItem? stat;
+        lock (_statLock)
+        {
+            stat = _lstServerStat.FirstOrDefault(t => t.IndexId == indexId);
+        }
         if (stat == null)
         {
             return;
@@ -84,17 +92,28 @@ public class StatisticsManager
         var toStat = JsonUtils.DeepCopy(stat);
         toStat.IndexId = toIndexId;
         await SQLiteHelper.Instance.ReplaceAsync(toStat);
-        _lstServerStat.Add(toStat);
+        lock (_statLock)
+        {
+            _lstServerStat.Add(toStat);
+        }
     }
 
     private async Task InitData()
     {
-        await SQLiteHelper.Instance.ExecuteAsync($"delete from ServerStatItem where indexId not in ( select indexId from ProfileItem )");
+        await SQLiteHelper.Instance.ExecuteAsync("delete from ServerStatItem where indexId not in ( select indexId from ProfileItem )");
 
         var ticks = DateTime.Now.Date.Ticks;
-        await SQLiteHelper.Instance.ExecuteAsync($"update ServerStatItem set todayUp = 0,todayDown=0,dateNow={ticks} where dateNow<>{ticks}");
+        await SQLiteHelper.Instance.ExecuteAsync("update ServerStatItem set todayUp = 0, todayDown = 0, dateNow = @0 where dateNow <> @0", ticks);
 
-        _lstServerStat = await SQLiteHelper.Instance.TableAsync<ServerStatItem>().ToListAsync();
+        lock (_statLock)
+        {
+            _lstServerStat.Clear();
+        }
+        var items = await SQLiteHelper.Instance.TableAsync<ServerStatItem>().ToListAsync();
+        lock (_statLock)
+        {
+            _lstServerStat.AddRange(items);
+        }
     }
 
     private async Task UpdateServerStatHandler(ServerSpeedItem server)
