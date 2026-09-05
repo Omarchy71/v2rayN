@@ -32,11 +32,15 @@ public class StatisticsSingboxService
         {
             if (webSocket == null)
             {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 webSocket = new ClientWebSocket();
-                await webSocket.ConnectAsync(new Uri(Url), CancellationToken.None);
+                await webSocket.ConnectAsync(new Uri(Url), cts.Token);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
     }
 
     public void Close()

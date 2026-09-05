@@ -173,7 +173,7 @@ public class Global
         @"https://www.googlevideo.com/generate_204",
         @"https://www.gstatic.com/generate_204",
         @"https://www.apple.com/library/test/success.html",
-        @"http://www.msftconnecttest.com/connecttest.txt"
+        @"https://www.msftconnecttest.com/connecttest.txt"
     ];
 
     public static readonly List<string> GeoFilesSources =

@@ -215,18 +215,25 @@ public sealed class AppManager
                         where 1=1 ";
         if (subid.IsNotEmpty())
         {
-            sql += $" and a.subid = '{subid}'";
+            sql += " and a.subid = @subid";
         }
         if (filter.IsNotEmpty())
         {
-            if (filter.Contains('\''))
-            {
-                filter = filter.Replace("'", "");
-            }
-            sql += string.Format(" and (a.remarks like '%{0}%' or a.address like '%{0}%') ", filter);
+            filter = filter.Replace("'", "").Replace("%", "").Replace("_", "");
+            sql += " and (a.remarks like @filter or a.address like @filter) ";
         }
 
-        return await SQLiteHelper.Instance.QueryAsync<ProfileItemModel>(sql);
+        var parameters = new List<object>();
+        if (subid.IsNotEmpty())
+        {
+            parameters.Add(subid);
+        }
+        if (filter.IsNotEmpty())
+        {
+            parameters.Add($"%{filter}%");
+        }
+
+        return await SQLiteHelper.Instance.QueryAsync<ProfileItemModel>(sql, parameters.ToArray());
     }
 
     public async Task<ProfileItem?> GetProfileItem(string indexId)

@@ -59,6 +59,11 @@ public static class CoreConfigHandler
             }
 
             var addressFileName = node.Address;
+            if (string.IsNullOrEmpty(addressFileName) || addressFileName.Contains("..") || Path.IsPathRooted(addressFileName))
+            {
+                ret.Msg = ResUI.FailedGenDefaultConfiguration;
+                return ret;
+            }
             if (!File.Exists(addressFileName))
             {
                 addressFileName = Utils.GetConfigPath(addressFileName);
@@ -68,7 +73,14 @@ public static class CoreConfigHandler
                 ret.Msg = ResUI.FailedGenDefaultConfiguration;
                 return ret;
             }
-            File.Copy(addressFileName, fileName);
+            var resolvedPath = Path.GetFullPath(addressFileName);
+            var configDir = Path.GetFullPath(Utils.GetConfigPath());
+            if (!resolvedPath.StartsWith(configDir, StringComparison.OrdinalIgnoreCase))
+            {
+                ret.Msg = ResUI.FailedGenDefaultConfiguration;
+                return ret;
+            }
+            File.Copy(resolvedPath, fileName);
             File.SetAttributes(fileName, FileAttributes.Normal); //Copy will keep the attributes of addressFileName, so we need to add write permissions to fileName just in case of addressFileName is a read-only file.
 
             //check again

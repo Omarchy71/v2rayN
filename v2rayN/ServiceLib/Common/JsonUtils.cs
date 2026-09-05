@@ -74,8 +74,9 @@ public class JsonUtils
             }
             return JsonSerializer.Deserialize<T>(strJson, _defaultDeserializeOptions);
         }
-        catch
+        catch (Exception ex)
         {
+            Logging.SaveLog("JsonUtils", ex);
             return default;
         }
     }
@@ -95,9 +96,9 @@ public class JsonUtils
             }
             return JsonNode.Parse(strJson, nodeOptions: null, _defaultDocumentOptions);
         }
-        catch
+        catch (Exception ex)
         {
-            //SaveLog(ex.Message, ex);
+            Logging.SaveLog("JsonUtils", ex);
             return null;
         }
     }

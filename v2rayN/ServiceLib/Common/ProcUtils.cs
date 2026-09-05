@@ -26,6 +26,13 @@ public static class ProcUtils
                 arguments = arguments.AppendQuotes();
             }
 
+            var safeExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".txt", ".json", ".yaml", ".yml", ".conf", ".log" };
+            var ext = Path.GetExtension(fileName);
+            if (!string.IsNullOrEmpty(ext) && !safeExtensions.Contains(ext))
+            {
+                Logging.SaveLog(_tag, $"Blocked execution of file with potentially unsafe extension: {ext}");
+                return null;
+            }
             Process proc = new()
             {
                 StartInfo = new ProcessStartInfo

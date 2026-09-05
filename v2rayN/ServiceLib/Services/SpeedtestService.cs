@@ -482,8 +482,19 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
 
         if (!IPAddress.TryParse(url, out var ipAddress))
         {
-            var ipHostInfo = await Dns.GetHostEntryAsync(url);
-            ipAddress = ipHostInfo.AddressList.First();
+            try
+            {
+                var ipHostInfo = await Dns.GetHostEntryAsync(url);
+                ipAddress = ipHostInfo.AddressList.FirstOrDefault();
+                if (ipAddress is null)
+                {
+                    return -1;
+                }
+            }
+            catch
+            {
+                return -1;
+            }
         }
 
         IPEndPoint endPoint = new(ipAddress, port);

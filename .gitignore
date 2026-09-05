@@ -402,3 +402,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# v2rayN runtime config (contains server credentials)
+guiNConfig.json
+guiNConfig*.json
+guiNDB.db
+guiNDB*.db
